@@ -2,17 +2,17 @@ using UnityEngine;
 
 public class RotateAround : MonoBehaviour
 {
-    [SerializeField] 
+    [SerializeField] private float rotateSpeed = 30f;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
-    {
+    //void Start()
+    //{
         
-    }
+    //}
 
     // Update is called once per frame
     void Update()
     {
-        
+        transform.Rotate(Vector3.up, rotateSpeed * Time.deltaTime);
     }
 }

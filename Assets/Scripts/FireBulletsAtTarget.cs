@@ -6,7 +6,6 @@ public class FireBulletsAtTarget : MonoBehaviour
     [SerializeField] GameObject bulletPrefab;
     [SerializeField] GameObject head;
     [SerializeField] Transform[] firePositions;
-
     [SerializeField][Range(1f, 10f)] private float minBulletSpeed;
     [SerializeField][Range(1f, 10f)] private float maxBulletSpeed;
     [SerializeField][Range(1f, 180f)] private float rotateSpeed = 45;
@@ -19,29 +18,27 @@ public class FireBulletsAtTarget : MonoBehaviour
     private float nextFire;
     private AudioSource _aso;
 
-    [SerializeField] private bool debugDetectionAngle = false;
+    [SerializeField] private bool debugDetectoinAngle = false;
     [SerializeField] private bool debugArea = false;
 
-    public void Configure(float fireRate, float fireDistance, Transform trackTarget)
+    internal void Configure(float fireRate, float fireDistance, Transform trackTarget)
     {
         _target = trackTarget;
         _fireRate = fireRate;
         _fireDistance = fireDistance;
     }
 
-
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    private void Start()
     {
         _aso = GetComponentInParent<AudioSource>();
+
         activationMark.SetActive(false);
     }
 
-    // Update is called once per frame
     void Update()
     {
         if (!_target) return;
+
         if (Vector3.Distance(transform.position, _target.position) > _fireDistance)
         {
             head.transform.rotation = Quaternion.RotateTowards(head.transform.rotation, Quaternion.identity, rotateSpeed * Time.deltaTime);
@@ -56,12 +53,11 @@ public class FireBulletsAtTarget : MonoBehaviour
 
         float angle = Vector3.Angle(directionStart, directionEnd);
 
-        float dot = Vector3.Dot(directionStart, rhs: directionEnd);
+        float dot = Vector3.Dot(directionStart, directionEnd);
 
-        if (debugDetectionAngle) Debug.LogWarning($"{gameObject.name}: {angle} dot: {dot}", gameObject);
+        if (debugDetectoinAngle) Debug.LogWarning($"{gameObject.name}:{angle} dot:{dot}", gameObject);
 
         var q = Quaternion.LookRotation(_target.position - head.transform.position);
-
         head.transform.rotation = Quaternion.RotateTowards(head.transform.rotation, q, rotateSpeed * Time.deltaTime);
 
         if (dot > fireAngle) return;
@@ -76,6 +72,7 @@ public class FireBulletsAtTarget : MonoBehaviour
                 bullet.GetComponent<MoveBullet>().Configure(Random.Range(minBulletSpeed, maxBulletSpeed));
 
                 bullet.transform.up = _target.position - firePosition.position;
+
             }
 
             _aso.Play();
@@ -88,8 +85,8 @@ public class FireBulletsAtTarget : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (!Application.isPlaying || !debugArea) return;
+
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, _fireDistance);
     }
-
 }

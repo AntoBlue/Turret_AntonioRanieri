@@ -1,15 +1,9 @@
-using NUnit.Framework.Constraints;
-using UnityEditor;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    [SerializeField] GameObject youWin;
-    [SerializeField] GameObject gameOver;
-
-
     #region Turrets
-
     [SerializeField] GameObject[] turretsPrefab;
     [SerializeField] int numberOfTurrets = 5;
     private GameObject[] _turrets;
@@ -17,39 +11,41 @@ public class GameManager : MonoBehaviour
     [SerializeField][Range(0.1f, 50f)] private float minDistanceX = 10;
     [SerializeField][Range(0.1f, 50f)] private float minDistanceZ = 10;
 
-    [SerializeField][Range(0.1f, 100f)] private float deltaX = 30f;
-    [SerializeField][Range(0.1f, 100f)] private float deltaZ = 30f;
+    [SerializeField][Range(0.1f, 100f)] private float deltaX = 30;
+    [SerializeField][Range(0.1f, 100f)] private float deltaZ = 30;
 
-    [SerializeField][Range(0.5f, 5f)] private float minFireRate = 0.5f;
-    [SerializeField][Range(0.5f, 5f)] private float maxFireRate = 2f;
+    [SerializeField][Range(0.05f, 5f)] private float minFireRate = 0.5f;
+    [SerializeField][Range(0.05f, 5f)] private float maxFireRate = 2f;
 
     [SerializeField][Range(1f, 50f)] private float minFireDistance = 10f;
-    [SerializeField][Range(1f, 50f)] private float maxFireDistance = 20f;
+    [SerializeField][Range(1f, 100f)] private float maxFireDistance = 20f;
     #endregion
 
     #region Walls
 
-    private int _wallsAvaible = 0;
+    private int _wallsAvailable = 0;
 
     [SerializeField] private GameObject[] wallsPrefab;
 
     [SerializeField][Range(0.1f, 50f)] private float minDistanceWallX = 1;
     [SerializeField][Range(0.1f, 50f)] private float minDistanceWallZ = 5;
 
-    [SerializeField][Range(0.1f, 100f)] private float deltaWallX = 1f;
-    [SerializeField][Range(0.1f, 100f)] private float deltaWallZ = 1f;
-
+    [SerializeField][Range(0.1f, 100f)] private float deltaWallX = 1;
+    [SerializeField][Range(0.1f, 100f)] private float deltaWallZ = 1;
     #endregion
+
+    [SerializeField] GameObject gameOver;
+    [SerializeField] GameObject youWin;
 
     void Start()
     {
         if (numberOfTurrets == 0)
         {
-            Debug.LogWarning("No turrets detected");
+            Debug.LogWarning("No number of turrets detected");
             return;
         }
 
-        _wallsAvaible = numberOfTurrets;
+        _wallsAvailable = numberOfTurrets;
 
         _turrets = new GameObject[numberOfTurrets];
 
@@ -65,13 +61,13 @@ public class GameManager : MonoBehaviour
             {
                 turret.transform.position = new Vector3(minDistanceX + Random.Range(-1f, 1f) * deltaX, 0,
                     minDistanceZ + Random.Range(-1f, 1f) * deltaZ);
-                turret.transform.Rotate(Vector3.up, Random.Range(-1f, 1f) * deltaZ);
+                turret.transform.Rotate(Vector3.up, Random.Range(0f, 360f), Space.World);
 
                 foreach (var addedTurret in _turrets)
                 {
-                    if (addedTurret == turret || addedTurret == null) continue;
+                    if (addedTurret == null || addedTurret == turret) continue;
 
-                    if (addedTurret.GetComponent<Collider>().bounds.Intersects(turret.GetComponent<Collider>().bounds))
+                    if (addedTurret.GetComponent<CapsuleCollider>().bounds.Intersects(turret.GetComponent<CapsuleCollider>().bounds))
                     {
                         intersect = true;
                         break;
@@ -79,11 +75,12 @@ public class GameManager : MonoBehaviour
                 }
 
                 tries--;
-            }
-            while(intersect && tries > 0);
 
-            FireBulletsAtTarget turretScripts = turret.GetComponent<FireBulletsAtTarget>();
-            turretScripts.Configure(Random.Range(minFireRate, maxFireRate), Random.Range(minFireDistance, maxFireDistance),
+            } while (intersect && tries > 0);
+
+            FireBulletsAtTarget turretScript = turret.GetComponent<FireBulletsAtTarget>();
+            turretScript.Configure(Random.Range(minFireRate, maxFireRate),
+                Random.Range(minFireDistance, maxFireDistance),
                 transform);
 
             //Place wall around turret
@@ -96,14 +93,14 @@ public class GameManager : MonoBehaviour
                 minDistanceWallZ + Random.Range(-1f, 1f) * deltaWallZ);
 
             //rotate around turret randomly
-            wall.transform.RotateAround(turret.transform.position, Vector3.up, Random.Range(0.3f, 360f));
+            wall.transform.RotateAround(turret.transform.position, Vector3.up, Random.Range(0f, 360f));
 
             //rotate around itself randomly locally
             wall.transform.Rotate(Vector3.up, Random.Range(-45f, 45f), Space.Self);
 
-            //notify
+            //We want to be notified (better to use (next lessons) -> delegates, actions, function etc)
             DestroyOnMultipleHit destroyOnMultipleHit = wall.GetComponent<DestroyOnMultipleHit>();
-            destroyOnMultipleHit.GameManager = this;
+            destroyOnMultipleHit.GameManager = this; //-> DidDestroyWall
         }
     }
 
@@ -111,36 +108,34 @@ public class GameManager : MonoBehaviour
     {
         DestroyAllTurrets();
 
-        Debug.Log($"Game Over - Play Time: {Time.time}");
+        Debug.Log($"Game OVER: Play time: {Time.time}");
 
         gameOver.SetActive(true);
     }
-
-    private void DestroyAllTurrets()
-    {
-        throw new System.NotImplementedException();
-    }
-
     public void DidDestroyWall()
     {
-        _wallsAvaible--;
+        _wallsAvailable--;
 
-        if(_wallsAvaible <= 0)
+        if (_wallsAvailable <= 0)
         {
-           DestroyAllTurrets();
+            DestroyAllTurrets();
 
-            Debug.Log($"Game Over - You Win! Play Time: {Time.time}");
- 
+            Debug.Log($"Game OVER: YOU WIN! Play time: {Time.time}");
 
             youWin.SetActive(true);
         }
     }
-    
-    private void DestoyAllTurrets()
+
+    private void DestroyAllTurrets()
     {
-           foreach(var turret in _turrets)
-           {
-               Destroy(turret);
-           }
+        foreach (var turret in _turrets)
+        {
+            Destroy(turret);
+        }
+    }
+
+    private void Update()
+    {
+        Debug.Log($"Vertical: {Input.GetAxis("Vertical")}");
     }
 }
