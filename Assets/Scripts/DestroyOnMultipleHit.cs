@@ -1,8 +1,7 @@
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class DestroyOnMultipleHit : MonoBehaviour
-{
+public class DestroyOnMultipleHit : MonoBehaviour {
     [SerializeField] int maxHitCount = 10;
     [SerializeField] private bool randomHitCount = true;
 
@@ -21,13 +20,13 @@ public class DestroyOnMultipleHit : MonoBehaviour
         _material = GetComponent<MeshRenderer>().material;
 
         _audioSource = GetComponent<AudioSource>();
-
+        
         if (randomHitCount)
         {
-            maxHitCount = Random.Range(1, maxHitCount); //note max value is hitcount-1
+            maxHitCount = Random.Range(1,maxHitCount); //note max value is hitcount-1
         }
 
-        _destroyStepsPercent = 1f / maxHitCount;
+        _destroyStepsPercent = 1f/maxHitCount; 
     }
 
     private void OnCollisionEnter(Collision other)
@@ -37,13 +36,13 @@ public class DestroyOnMultipleHit : MonoBehaviour
         maxHitCount -= 1;
 
         _material.color -= new Color(0, 0, 0, _destroyStepsPercent);
-
+        
         Debug.Log($"{_destroyStepsPercent} -> alpha = {_material.color.a}");
 
         if (maxHitCount <= 0)
         {
             _gameManager.DidDestroyWall();
-
+            
             if (_audioSource.clip)
             {
                 _audioSource.Play();
@@ -53,11 +52,11 @@ public class DestroyOnMultipleHit : MonoBehaviour
             {
                 Destroy(gameObject);
             }
-
+            
             //To avoid next calls (we can't disable component 'cause OnCollision & OnTrigger are always called
             //even if the component is disabled
             Destroy(this);
-
+            
         }
     }
 
@@ -67,4 +66,3 @@ public class DestroyOnMultipleHit : MonoBehaviour
         Destroy(gameObject);
     }
 }
-
